@@ -1,0 +1,11 @@
+{
+  "name": "redux-mirror-client",
+  "version": "1.0.0",
+  "description": "Client library for redux-mirror",
+  "main": "index.js",
+  "scripts": {
+    "compile": "babel src.js > index.js"
+  },
+  "author": "Esteban Ordano <eordano@gmail.com>",
+  "license": "MIT"
+}
