@@ -1,13 +1,10 @@
 {
   "name": "redux-mirror",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Monitor a remote user agent using your redux app.",
   "main": "src/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
+  "author": "Esteban Ordano <eordano@gmail.com>",
+  "license": "MIT",
   "dependencies": {
     "babel-core": "^6.9.1",
     "babel-plugin-add-module-exports": "^0.2.1",

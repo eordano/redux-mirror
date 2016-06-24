@@ -1,7 +1,7 @@
 {
   "name": "redux-mirror-client",
-  "version": "1.0.0",
-  "description": "Client library for redux-mirror",
+  "version": "0.1.0",
+  "description": "Client library for redux-mirror - reports all redux actions and user metadata",
   "main": "index.js",
   "scripts": {
     "compile": "babel src.js > index.js"
