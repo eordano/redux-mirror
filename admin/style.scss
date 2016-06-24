@@ -1,0 +1,78 @@
+$header-black: #424242;
+$not-that-black: #424242;
+$black: #212121;
+$white-text: #ffffff;
+$link-top-color: #fafafa;
+
+$white-background: #ffffff;
+$disable-black-gray: #ccc;
+
+.app {
+  font-family: 'Helvetica Neue', Arial;
+  color: $black;
+
+  a {
+    color: $not-that-black;
+    font-weight: 500;
+  }
+
+  .mirror {
+    width: 100%;
+    background: $disable-black-gray;
+    min-height: 100%;
+    margin: auto;
+    overflow: scroll;
+    display: flex;
+
+    .frameContainer {
+      padding: 20px;
+      flex: 1;
+      .frame {
+        background: white;
+        margin: auto;
+        overflow: hidden;
+        position: relative;
+        .scrolled {
+          position: absolute;
+          .mouse {
+            width: 4px;
+            height: 4px;
+            position: absolute;
+            background: black;
+          }
+        }
+      }
+    }
+  }
+
+  .client {
+    background: $white-background;
+    width: 80%;
+    margin: auto;
+  }
+
+  .header {
+    background: $header-black;
+    color: $white-text;
+    margin: 0;
+    height: 28px;
+    padding-top: 8px;
+
+    .logo {
+      float: left;
+      margin-left: 10px;
+    }
+
+    .status {
+      float: right;
+      margin-right: 10px;
+      a {
+        color: $link-top-color;
+      }
+    }
+
+    .current {
+      float: right;
+    }
+  }
+}

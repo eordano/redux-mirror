@@ -2,17 +2,33 @@ import socketIO from 'socket.io-client'
 
 const constants = {
   newClient    : 'newClient',
+  state        : 'state',
   resizeWindow : 'resizeWindow',
   action       : 'action',
   mouseMovement: 'mouseMovement',
   scroll       : 'scroll',
-  disconnected : 'disconnected'
 }
 
 const makeAction = payload => makeMessage(constants.action, payload || {})
 
 const makeMessage = (type, payload) => {
   return JSON.stringify(Object.assign({ type }, payload))
+}
+
+const getWindowSize = () => {
+  const width = window.innerWidth,
+        height = window.innerHeight
+  return { width, height }
+}
+
+const getScroll = () => {
+  /**
+   * Taken out of Stack Overflow. Source:
+   * http://stackoverflow.com/a/14384091/182855
+   */
+  const top  = window.pageYOffset || document.documentElement.scrollTop,
+        left = window.pageXOffset || document.documentElement.scrollLeft
+  return { left, top }
 }
 
 let mouseListener, scrollListener, resizeListener
@@ -30,28 +46,26 @@ const hookToWindowEvents = send => {
   }
 
   mouseListener = ev => {
-    send(makeMessage(constants.mouseMovement, { x: ev.screenX, y: ev.screenY }))
+    send(makeMessage(constants.mouseMovement, { x: ev.clientX, y: ev.clientY }))
   }
   window.addEventListener('mousemove', mouseListener)
 
   scrollListener = ev => {
-    /**
-     * Taken out of Stack Overflow. Source:
-     * http://stackoverflow.com/a/14384091/182855
-     */
-    const top  = window.pageYOffset || document.documentElement.scrollTop,
-          left = window.pageXOffset || document.documentElement.scrollLeft
-    send(makeMessage(constants.scroll, { left, top }))
+    send(makeMessage(constants.scroll, getScroll()))
   }
   window.addEventListener('scroll', scrollListener)
 
   resizeListener = ev => {
-    const width = window.innerWidth,
-          height = window.innerHeight
-    send(makeMessage(constants.resizeWindow, { width, height }))
+    send(makeMessage(constants.resizeWindow, getWindowSize()))
   }
   window.addEventListener('resize', resizeListener)
 }
+
+const currentState = (store) => ({
+  windowSize: getWindowSize(),
+  scroll: getScroll(),
+  state: store.getState()
+})
 
 const mirror = config => store => {
 
@@ -61,8 +75,8 @@ const mirror = config => store => {
 
   socket.on('connect', () => {
     while (queue.length) {
-      const first = queue.shift(1)
-      socket.send(first)
+      const headMessage = queue.shift(1)
+      socket.send(headMessage)
     }
     connected = true
   })
@@ -72,6 +86,10 @@ const mirror = config => store => {
     send(makeMessage(constants.disconnected))
   })
 
+  socket.on('stateQuery', () => {
+    send(makeMessage(constants.state, currentState(store)))
+  })
+
   const send = (message) => {
     if (!connected) {
       return queue.push(message)
@@ -79,13 +97,13 @@ const mirror = config => store => {
     return socket.send(message)
   }
 
-  send(makeMessage(constants.newClient))
+  send(makeMessage(constants.newClient, currentState(store)))
 
   hookToWindowEvents(send)
 
   return next => action => {
     let result = next(action)
-    send(makeAction({ newState: result, action }))
+    send(makeAction({ newState: store.getState(), action }))
     return result
   }
 }

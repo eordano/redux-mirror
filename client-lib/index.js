@@ -21,11 +21,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var constants = {
   newClient: 'newClient',
+  state: 'state',
   resizeWindow: 'resizeWindow',
   action: 'action',
   mouseMovement: 'mouseMovement',
-  scroll: 'scroll',
-  disconnected: 'disconnected'
+  scroll: 'scroll'
 };
 
 var makeAction = function makeAction(payload) {
@@ -34,6 +34,22 @@ var makeAction = function makeAction(payload) {
 
 var makeMessage = function makeMessage(type, payload) {
   return (0, _stringify2.default)((0, _assign2.default)({ type: type }, payload));
+};
+
+var getWindowSize = function getWindowSize() {
+  var width = window.innerWidth,
+      height = window.innerHeight;
+  return { width: width, height: height };
+};
+
+var getScroll = function getScroll() {
+  /**
+   * Taken out of Stack Overflow. Source:
+   * http://stackoverflow.com/a/14384091/182855
+   */
+  var top = window.pageYOffset || document.documentElement.scrollTop,
+      left = window.pageXOffset || document.documentElement.scrollLeft;
+  return { left: left, top: top };
 };
 
 var mouseListener = void 0,
@@ -51,27 +67,27 @@ var hookToWindowEvents = function hookToWindowEvents(send) {
   }
 
   mouseListener = function mouseListener(ev) {
-    send(makeMessage(constants.mouseMovement, { x: ev.screenX, y: ev.screenY }));
+    send(makeMessage(constants.mouseMovement, { x: ev.clientX, y: ev.clientY }));
   };
   window.addEventListener('mousemove', mouseListener);
 
   scrollListener = function scrollListener(ev) {
-    /**
-     * Taken out of Stack Overflow. Source:
-     * http://stackoverflow.com/a/14384091/182855
-     */
-    var top = window.pageYOffset || document.documentElement.scrollTop,
-        left = window.pageXOffset || document.documentElement.scrollLeft;
-    send(makeMessage(constants.scroll, { left: left, top: top }));
+    send(makeMessage(constants.scroll, getScroll()));
   };
   window.addEventListener('scroll', scrollListener);
 
   resizeListener = function resizeListener(ev) {
-    var width = window.innerWidth,
-        height = window.innerHeight;
-    send(makeMessage(constants.resizeWindow, { width: width, height: height }));
+    send(makeMessage(constants.resizeWindow, getWindowSize()));
   };
   window.addEventListener('resize', resizeListener);
+};
+
+var currentState = function currentState(store) {
+  return {
+    windowSize: getWindowSize(),
+    scroll: getScroll(),
+    state: store.getState()
+  };
 };
 
 var mirror = function mirror(config) {
@@ -83,8 +99,8 @@ var mirror = function mirror(config) {
 
     socket.on('connect', function () {
       while (queue.length) {
-        var first = queue.shift(1);
-        socket.send(first);
+        var headMessage = queue.shift(1);
+        socket.send(headMessage);
       }
       connected = true;
     });
@@ -94,6 +110,10 @@ var mirror = function mirror(config) {
       send(makeMessage(constants.disconnected));
     });
 
+    socket.on('stateQuery', function () {
+      send(makeMessage(constants.state, currentState(store)));
+    });
+
     var send = function send(message) {
       if (!connected) {
         return queue.push(message);
@@ -101,14 +121,14 @@ var mirror = function mirror(config) {
       return socket.send(message);
     };
 
-    send(makeMessage(constants.newClient));
+    send(makeMessage(constants.newClient, currentState(store)));
 
     hookToWindowEvents(send);
 
     return function (next) {
       return function (action) {
         var result = next(action);
-        send(makeAction({ newState: result, action: action }));
+        send(makeAction({ newState: store.getState(), action: action }));
         return result;
       };
     };
